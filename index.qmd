@@ -1,38 +1,38 @@
 ---
 title: "Data Visualization Assignment"
 author: "Victoria Baran"
-format: html
+format: 
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
 editor: visual
 ---
+# Story Summary
 
-```{r}
-1 + 1
-```
+When examining the Rolling Stone Top 500, something that instantly stood out was how certain albums and genres gained appreciation from critics between 2003 and 2020, while others lost it. Blues/Blues Rock went from 61 to 29, while Soul/Gospel/R&B went up by 20 albums, and Hip-Hop more than doubled within 17 years. This led to a central question: did these genres rise because of newly released albums, or were their albums previously overlooked? In other words, are the albums added in 2020 mainly made up of new releases, or were they released in time to be on the 2003 list and simply not acknowledged until almost two decades later? 
 
-You can add options to executable code like this
-
-```{r}
-#| echo: false
-2 * 2
-```
-
-The `echo: false` option disables the printing of code (only output is displayed).
-
+To answer this, I compared the number of albums per genre on each list, then looked at when the added albums were released and their allocated genre.  Interestingly, the analysis showed that soul and hip-hop grew the most while much of what was added already existed in 2003, specifically out of 174 albums, 113 of them were released in time for the 2003 Rolling Stones list. This suggests that the 2020 list was less an update on new music but rather a second chance for older music.  
 ```{r, loading_data}
 
 library(tidyverse)
+library(plotly)
 
 rolling_stone <- read_csv("data/Rolling_Stone_500_Data_Viz.csv")
 
 ```
 
 ```{r, csv_info}
+#| include: false
 
 names(rolling_stone)
 
 ```
 
 ```{r, 2003_rank}
+#| include: false
 
 rolling_stone |>
   filter(!is.na(`2003 Rank`)) |>
@@ -41,6 +41,7 @@ rolling_stone |>
 ```
 
 ```{r, 2012_rank}
+#| include: false
 
 rolling_stone |>
   filter(!is.na(`2012 Rank`)) |>
@@ -49,6 +50,7 @@ rolling_stone |>
 ```
 
 ```{r, 2020_rank}
+#| include: false
 
 rolling_stone |>
   filter(!is.na(`2020 Rank`)) |>
@@ -56,6 +58,7 @@ rolling_stone |>
 
 ```
 ```{r, 2003_2020_rank}
+#| include: false
 
 rolling_stone |>
   summarise(
@@ -66,6 +69,7 @@ rolling_stone |>
 
 ```
 ```{r, new_rank_2003_2020}
+#| include: false
 #why were there so many new albums added to the 2020 list that were not on 2003 list 
 
 rolling_stone |> 
@@ -77,6 +81,7 @@ rolling_stone |>
 ```
 
 ```{r, new_genre}
+#| include: false
 #what genre of older albums got recently added
 
 rolling_stone |> 
@@ -88,6 +93,7 @@ rolling_stone |>
   count(`Album Genre`, sort = TRUE)
 ```
 ```{r, genre_2003_vs_2020}
+#| include: false
 #comparing genre in 2003 to 2020 
 
 rolling_stone |>
@@ -99,6 +105,7 @@ rolling_stone |>
   count(`Album Genre`, sort = TRUE)
 ```
 ```{r, hiphop_rap_old_new}
+#| include: false
 #examine of the hiphop/rap albums that joined in 2020 and determining if they were old or new releases
 
 rolling_stone |>
@@ -113,6 +120,7 @@ rolling_stone |>
   )
 ```
 ```{r, blues_old_new}
+#| include: false
 #examine of the Blues/Blues Rock albums that joined in 2020 and determining if they were old or new releases
 
 rolling_stone |>
@@ -126,6 +134,7 @@ rolling_stone |>
   )
 ```
 ```{r, soul_gospel_r&b_old_new}
+#| include: false
 #examine of the hiphop/rap albums that joined in 2020 and determining if they were old or new releases
 
 rolling_stone |>
@@ -154,7 +163,7 @@ rolling_stone_clean <- rolling_stone |>
 ```
 
 ```{r, check_rename}
-
+#| include: false
 unique(rolling_stone_clean$`Album Genre`)
 
 ```
@@ -207,6 +216,7 @@ genre_comparison_clean <- genre_comparison |>
 ```
 
 ```{r, genre_na_once}
+#| include: false
 #going to be using | (or) to figure out when there is a genre missing at least once, to see when the genre appeared/left 
 
 genre_comparison_clean |>
@@ -253,10 +263,14 @@ genre_plot <- genre_comparison_clean |>
     values_to = "count"
   )
 ```
+# Version A: Scientific Article
 
+Albums were classified by genre and by list membership held. An album is classified as 'added' the album appears on the 2020 list, but not on the 2003 list. If an added album was released in or before 2003, it is described as an 'older addition'.
 ```{r, figure_1}
+#| fig-cap: "Figure 1. The number of albums in each genre on the 2003 and 2020 Rolling Stone Top 500 lists (n = 500 per list). Open circles indicate the number present in 2003, and filled circles indicate the number in 2020. Albums with no genre label are excluded (125 in 2003; 110 in 2020)  "
 
-ggplot(genre_comparison_clean) +
+ggplot(genre_comparison_clean |>
+  filter(`Album Genre` != "Genre Unavailable")) +
   geom_segment(
     aes(
       x = `Album Genre`,
@@ -269,34 +283,50 @@ ggplot(genre_comparison_clean) +
   geom_point(
     aes(
       x = `Album Genre`,
-      y= count_2003
+      y= count_2003,
+      shape = "2003"
     ),
     size = 3
   ) +
   geom_point(
     aes(
       x = `Album Genre`,
-      y= count_2020
+      y= count_2020,
+      shape = "2020"
     ),
     size = 3
   ) +
-  coord_flip()
+  scale_shape_manual(values = c("2003" = 1, "2020" = 16)) +
+  coord_flip()+
+labs(
+  x = "",
+  y = "Number of Albums",
+  shape = "List"
+) +
+  theme_classic()
 ```
-
+Examining how genres are represented between editions, the data show that Blues/Blues Rock declined from 61 to 29 albums, while Soul/Gospel/R&B increased from 45 to 65 and Hip-Hop more than doubled from 26 to 57
 ```{r, additional_albums}
 #find albums that existed in 2003 or released after 2003 
 
 album_additions <- data.frame(
-  type = c("Aready existed by 2003", "Released after 2003"),
+  type = c("Already existed by 2003", "Released after 2003"),
   count = c(113,61)
 )
 
 ```
 
-```{r, barplot_additions}
+```{r, figure_2}
+#| fig-cap: "Figure 2. Albums added to the 2020 Rolling Stone Top 500 list that were not on the 2003 list (n=174). The left bar shows albums that already existed in 2003 (n  = 113), and the right bar shows albums released after 2003 (n = 61)."
 
 ggplot(album_additions, aes(x = type, y =count)) +
-  geom_bar(stat = "identity")
+  geom_col(fill = "grey40", width = 0.6) +
+  geom_text(aes(label = count), vjust = -0.5)+
+  labs(
+    x = "",
+    y = "Number of Albums Added"
+  )+
+  theme_classic()
 
 ```
 ```{r, older_albums}
@@ -309,10 +339,16 @@ older_albums_genre <- rolling_stone_clean |>
   )|>
   count(`Album Genre`)
 ```
-
+Out of 174 albums that appeared on the 2020 list but not on the 2003 list, 113 (65%) had been released in or prior to 2003, indicating most added albums were not new releases 
 ```{r, figure_3}
+#| fig-cap: "Figure 3. Genres of albums added to the Rolling Stone Top 500 in 2020 that were released in or before 2003 (n = 113). Genres are ordered from the most albums added (Soul/Gospel/R&B, n = 20) to the fewest (n = 2). The 27 albums with no genre label were excluded."
 
-ggplot(older_albums_genre, aes(x = `Album Genre`, y = n))+
+older_albums_sorted <- older_albums_genre |>
+  filter(`Album Genre` != "Genre Unavailable") |>
+  arrange(n) |>
+  mutate(`Album Genre` = factor(`Album Genre`, `Album Genre`))
+
+ggplot(older_albums_sorted, aes(x = `Album Genre`, y = n))+
   geom_segment(
     aes(
       x = `Album Genre`,
@@ -323,5 +359,116 @@ ggplot(older_albums_genre, aes(x = `Album Genre`, y = n))+
     colour = "grey"
 ) +
 geom_point(size = 3) +
-  coord_flip()
+  coord_flip()+ 
+  labs(
+    x = "",
+    y= "Number of older albums added"
+  )+
+  theme_classic()
 ```
+Among older additions, Soul/Gospel/R&B (n = 20) and Hip-Hop/Rap (n = 19) were the most prevalent additions to the 2020 list 
+
+# Version B: Accessible Version
+
+## What Goes Up, Must Come Down
+Between 2003 and 2020, some genres gained and lost spots in the Rolling Stone Top 500 while others lost them. Blues lost more than half its spots on the list, while hip-hop more than doubled. This chart shows the genres that gained or lost at least 10 albums; hover over this chart, and any ones below, to see the exact numbers
+``` {r, accesable_f1}
+
+genre_access_1 <- genre_comparison_clean |>
+  filter(`Album Genre` != "Genre Unavailable") |>
+  mutate(change = count_2020 - count_2003) |>
+  filter(abs(change) >= 10) |>
+  arrange(change)
+
+genre_bars <- bind_rows(
+  genre_2003 |>
+    mutate(year = "2003"),
+  genre_2020 |>
+    mutate(year = "2020")
+)|>
+  inner_join(genre_access_1, by = "Album Genre") |>
+  mutate(`Album Genre` = factor(`Album Genre`, genre_access_1$`Album Genre`)) |>
+  rename(
+    Genre = `Album Genre`,
+    Albums = n,
+    List = year
+  )
+
+genre_access_1_clean <- ggplot(genre_bars, aes(
+  x = Genre, 
+  y = Albums, 
+  fill = List),
+  )+
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(
+    subtitle = "For every genre that climbed the Top 500, another fell",
+    x = "",
+    y = "Albums on the list",
+    fill = "List"
+  )+
+  scale_fill_manual(values = c("2003" = "#A6CEE3", "2020" = "#1F4E76"))+
+  theme_minimal()
+
+ggplotly(genre_access_1_clean)
+
+```
+## Most Of The 'New' Albums Weren't New
+An easy assumption is that the list changed because new music came out. However, about two out of every three albums added in 2020 were already around when the 2003 list was made. 
+``` {r, accessable_f2}
+
+plot_ly(
+  album_additions,
+  labels = ~type,
+  values = ~count,
+  type = "pie",
+  marker = list(colors = c("#A6CEE3", "#1F4E79")),
+  textinfo = "percent",
+  text = ~paste(count, "albums"),
+  hoverinfo = "label+text"
+) |>
+  layout(
+    margin = list(t = 80),
+    legend = list(orientation = "h")
+  )
+
+
+```
+## Soul and Hip-Hop Make A Comeback
+Which older albums finally made it? Mostly soul and hip-hop, as seen in the dark blue bars. These albums were not new; rather just noticed late.
+```{r, accessable_f3}
+
+older_access <- older_albums_sorted |>
+  mutate(
+    Group = if_else(
+      `Album Genre` %in% c("Soul/Gospel/R&B", "Hip-Hop/Rap"),
+      "Soul and hip-hop",
+      "Other genres"
+    )
+  )|>
+  rename(
+    Genre = `Album Genre`,
+    Albums = n
+  )
+  
+  older_plot_access <- ggplot(older_access,aes(
+  x = Genre,
+  y = Albums,
+  fill = Group)
+  )+
+  geom_col()+
+  coord_flip()+
+  labs(
+    x = "",
+    y = "Older albums added in 2020"
+  )+
+  scale_fill_manual(values = c("Soul and hip-hop" = "#1F4E79", "Other genres" = "#A6CEE3"))+
+  theme_minimal()+
+  theme(legend.position = "none")
+  
+ggplotly(older_plot_access, tooltip = c("x", "y"))
+```
+# Data and Source Note
+
+  The data came from a data-set from TidyTuesday (https://github.com/rfordatascience/tidytuesday/blob/main/data/2024/2024-05-07/readme.md) named 'Rolling Stone Album Rankings'. The data set lists 691 albums and their rankings on the 2003, 2012, and 2020 Rolling Stone 500 list.Transformations included renaming a genre label from 'Blues/Blues ROck' to 'Blues/Blues Rock' to correct typos. 
+  Additionally, 164 albums had no label (125 on 2003 list, 110 on the 2020 list); those were excluded from the figures which limits the genre comparison. 
