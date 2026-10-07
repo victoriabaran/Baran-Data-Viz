@@ -1,0 +1,327 @@
+---
+title: "Data Visualization Assignment"
+author: "Victoria Baran"
+format: html
+editor: visual
+---
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r, loading_data}
+
+library(tidyverse)
+
+rolling_stone <- read_csv("data/Rolling_Stone_500_Data_Viz.csv")
+
+```
+
+```{r, csv_info}
+
+names(rolling_stone)
+
+```
+
+```{r, 2003_rank}
+
+rolling_stone |>
+  filter(!is.na(`2003 Rank`)) |>
+  summarise(mean_release_year = mean(`Release Year`, na.rm = TRUE))
+
+```
+
+```{r, 2012_rank}
+
+rolling_stone |>
+  filter(!is.na(`2012 Rank`)) |>
+  summarise(mean_release_year = mean(`Release Year`, na.rm = TRUE))
+
+```
+
+```{r, 2020_rank}
+
+rolling_stone |>
+  filter(!is.na(`2020 Rank`)) |>
+  summarise(mean_release_year = mean(`Release Year`, na.rm = TRUE))
+
+```
+```{r, 2003_2020_rank}
+
+rolling_stone |>
+  summarise(
+    stayed = sum(!is.na(`2003 Rank`) & !is.na(`2020 Rank`)),
+    entered = sum(is.na(`2003 Rank`) & !is.na(`2020 Rank`)),
+    left = sum (!is.na(`2003 Rank`) & is.na(`2020 Rank`))
+    )
+
+```
+```{r, new_rank_2003_2020}
+#why were there so many new albums added to the 2020 list that were not on 2003 list 
+
+rolling_stone |> 
+  filter(is.na(`2003 Rank`) & !is.na(`2020 Rank`)) |>
+  summarise(
+    released_after_2003 = sum(`Release Year` > 2003, na.rm = TRUE),
+    already_exists = sum(`Release Year` <= 2003, na.rm = TRUE)
+  )
+```
+
+```{r, new_genre}
+#what genre of older albums got recently added
+
+rolling_stone |> 
+  filter(
+    is.na(`2003 Rank`),
+    !is.na(`2020 Rank`),
+    `Release Year` <=  2003
+  ) |>
+  count(`Album Genre`, sort = TRUE)
+```
+```{r, genre_2003_vs_2020}
+#comparing genre in 2003 to 2020 
+
+rolling_stone |>
+  filter(!is.na(`2003 Rank`)) |>
+  count(`Album Genre`, sort = TRUE)
+
+rolling_stone |>
+  filter(!is.na(`2020 Rank`)) |>
+  count(`Album Genre`, sort = TRUE)
+```
+```{r, hiphop_rap_old_new}
+#examine of the hiphop/rap albums that joined in 2020 and determining if they were old or new releases
+
+rolling_stone |>
+  filter(
+    `Album Genre` == "Hip-Hop/Rap",
+    is.na(`2003 Rank`),
+    !is.na(`2020 Rank`)
+  )|> 
+  summarise(
+    released_after_2003 = sum(`Release Year` > 2003, na.rm = TRUE),
+    already_existed = sum(`Release Year` <= 2003, na.rm = TRUE)
+  )
+```
+```{r, blues_old_new}
+#examine of the Blues/Blues Rock albums that joined in 2020 and determining if they were old or new releases
+
+rolling_stone |>
+  filter(
+    `Album Genre` == "Blues/Blues Rock",
+    !is.na(`2003 Rank`),
+    is.na(`2020 Rank`)
+  )|> 
+  summarise(
+    left_list = n()
+  )
+```
+```{r, soul_gospel_r&b_old_new}
+#examine of the hiphop/rap albums that joined in 2020 and determining if they were old or new releases
+
+rolling_stone |>
+  filter(
+    `Album Genre` == "Soul/Gospel/R&B",
+    is.na(`2003 Rank`),
+    !is.na(`2020 Rank`)
+  )|> 
+  summarise(
+    released_after_2003 = sum(`Release Year` > 2003, na.rm = TRUE),
+    already_existed = sum(`Release Year` <= 2003, na.rm = TRUE)
+  )
+```
+
+```{r,clean_genre_data}
+#had to go back to rename ROck and NA 
+
+rolling_stone_clean <- rolling_stone |>
+  mutate(
+    `Album Genre` = recode(
+      `Album Genre`,
+      "Blues/Blues ROck" = "Blues/Blues Rock"
+    ),
+    `Album Genre` = replace_na(`Album Genre`, "Genre Unavailable")
+  )
+```
+
+```{r, check_rename}
+
+unique(rolling_stone_clean$`Album Genre`)
+
+```
+
+```{r, 2003_genre_count}
+#using current dataset to create a new object to count alnums of each genre in 2003  
+
+genre_2003 <- rolling_stone_clean |>
+  filter(!is.na(`2003 Rank`)) |>
+  count(`Album Genre`)
+
+```
+
+```{r, 2012_genre_count}
+#using current dataset to create a new object to count alnums of each genre in 2012
+
+genre_2012 <- rolling_stone_clean |>
+  filter(!is.na(`2012 Rank`)) |>
+  count(`Album Genre`)
+
+```
+
+```{r, 2020_genre_count}
+#using current dataset to create a new object to count alnums of each genre in 2020  
+
+genre_2020 <- rolling_stone_clean |>
+  filter(!is.na(`2020 Rank`)) |>
+  count(`Album Genre`)
+
+```
+
+```{r, comb_2003_2012_2020}
+#using full_join, going to take the rows that correspond and combine them together, thus, going to combine 2003,2012,2020 genres 
+
+genre_comparison <- genre_2003 |>
+  full_join(genre_2012, by = "Album Genre") |>
+  full_join(genre_2020, by = "Album Genre")
+
+```
+
+```{r, rename_year_columns}
+#since genre_comparison is using random column names, going to change to legible ones 
+
+genre_comparison_clean <- genre_comparison |> 
+  rename(
+    count_2003 = n.x, 
+    count_2012 = n.y,
+    count_2020 = n
+  )
+```
+
+```{r, genre_na_once}
+#going to be using | (or) to figure out when there is a genre missing at least once, to see when the genre appeared/left 
+
+genre_comparison_clean |>
+  filter(
+    is.na(count_2003)|
+    is.na(count_2012)|
+    is.na(count_2020)
+  )
+```
+```{r, rename_na_to_0}
+#as previously checked, the only NA is Afrobeat, so we can replace the NA to 0 since the previous years it just wasn't in the top 500
+
+genre_comparison_clean <- genre_comparison_clean |>
+  mutate(
+    count_2003 = replace_na(count_2003, 0),
+    count_2012 = replace_na(count_2012, 0),
+    count_2020 = replace_na(count_2020, 0)
+  )
+
+```
+
+```{r, order_genre}
+# reordering data using average 
+
+genre_comparison_clean <- genre_comparison_clean |>
+  rowwise() |>
+  mutate(
+    mean_count = mean(c(count_2003, count_2012, count_2020))
+  )|>
+  arrange(mean_count)|>
+  mutate(
+    `Album Genre` = factor(`Album Genre`, `Album Genre`)
+  )
+
+```
+
+```{r, changing_table}
+#going to use pivot_longer() to change how the dot graph looks 
+
+genre_plot <- genre_comparison_clean |>
+  pivot_longer(
+    cols = c(count_2003, count_2012, count_2020),
+    names_to = "year",
+    values_to = "count"
+  )
+```
+
+```{r, figure_1}
+
+ggplot(genre_comparison_clean) +
+  geom_segment(
+    aes(
+      x = `Album Genre`,
+      xend = `Album Genre`,
+      y = count_2003,
+      yend = count_2020
+    ),
+    colour = "grey"
+  )+
+  geom_point(
+    aes(
+      x = `Album Genre`,
+      y= count_2003
+    ),
+    size = 3
+  ) +
+  geom_point(
+    aes(
+      x = `Album Genre`,
+      y= count_2020
+    ),
+    size = 3
+  ) +
+  coord_flip()
+```
+
+```{r, additional_albums}
+#find albums that existed in 2003 or released after 2003 
+
+album_additions <- data.frame(
+  type = c("Aready existed by 2003", "Released after 2003"),
+  count = c(113,61)
+)
+
+```
+
+```{r, barplot_additions}
+
+ggplot(album_additions, aes(x = type, y =count)) +
+  geom_bar(stat = "identity")
+
+```
+```{r, older_albums}
+
+older_albums_genre <- rolling_stone_clean |>
+  filter(
+    is.na(`2003 Rank`),
+    !is.na(`2020 Rank`),
+    `Release Year` <= 2003
+  )|>
+  count(`Album Genre`)
+```
+
+```{r, figure_3}
+
+ggplot(older_albums_genre, aes(x = `Album Genre`, y = n))+
+  geom_segment(
+    aes(
+      x = `Album Genre`,
+      xend = `Album Genre`,
+      y = 0,
+      yend = n
+    ),
+    colour = "grey"
+) +
+geom_point(size = 3) +
+  coord_flip()
+```
