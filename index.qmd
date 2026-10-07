@@ -252,17 +252,6 @@ genre_comparison_clean <- genre_comparison_clean |>
   )
 
 ```
-
-```{r, changing_table}
-#going to use pivot_longer() to change how the dot graph looks 
-
-genre_plot <- genre_comparison_clean |>
-  pivot_longer(
-    cols = c(count_2003, count_2012, count_2020),
-    names_to = "year",
-    values_to = "count"
-  )
-```
 # Version A: Scientific Article
 
 Albums were classified by genre and by list membership held. An album is classified as 'added' the album appears on the 2020 list, but not on the 2003 list. If an added album was released in or before 2003, it is described as an 'older addition'.
@@ -470,5 +459,7 @@ ggplotly(older_plot_access, tooltip = c("x", "y"))
 ```
 # Data and Source Note
 
-  The data came from a data-set from TidyTuesday (https://github.com/rfordatascience/tidytuesday/blob/main/data/2024/2024-05-07/readme.md) named 'Rolling Stone Album Rankings'. The data set lists 691 albums and their rankings on the 2003, 2012, and 2020 Rolling Stone 500 list.Transformations included renaming a genre label from 'Blues/Blues ROck' to 'Blues/Blues Rock' to correct typos. 
+  The data came from a data-set from TidyTuesday (https://github.com/rfordatascience/tidytuesday/blob/main/data/2024/2024-05-07/readme.md) named 'Rolling Stone Album Rankings'. The data set lists 691 albums and their rankings on the 2003, 2012, and 2020 Rolling Stone 500 list. Charts come from R Graph Gallery (https://r-graph-gallery.com/)
+  Transformations included renaming a genre label from 'Blues/Blues ROck' to 'Blues/Blues Rock' to correct typos. 
   Additionally, 164 albums had no label (125 on 2003 list, 110 on the 2020 list); those were excluded from the figures which limits the genre comparison. 
+  
